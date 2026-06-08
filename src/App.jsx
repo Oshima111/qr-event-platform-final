@@ -197,7 +197,7 @@ const StatusBadge = ({ status }) => {
 }
 
 const Card = ({ children, className = "", onClick }) => (
-  <div onClick={onClick} className={cn("bg-white rounded-2xl border border-slate-100 shadow-sm", className)}>{children}</div>
+  <div onClick={onClick} className={cn("bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100", className)}>{children}</div>
 )
 
 const Btn = ({ children, onClick, variant = "primary", size = "md", icon: Icon, loading, disabled, className = "", type = "button" }) => {
@@ -302,10 +302,10 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [params, setParams] = useState({})
   const [toasts, setToasts] = useState([])
-  const [data, setData] = useState(0) // force re-renders
+  const [, setTick] = useState(0) // used for force re-renders from mock store
 
   const nav = useCallback((v, p = {}) => { setView(v); setParams(p); window.scrollTo(0,0) }, [])
-  const refresh = () => setData(d => d + 1)
+  const refresh = useCallback(() => setTick(t => t + 1), [])
 
   const toast = useCallback((msg, type = "success") => {
     const id = Date.now()
@@ -346,32 +346,36 @@ export default function App() {
       </div>
 
       {/* Render View */}
-      {!isAdmin && <PublicLayout view={view} nav={nav} user={user} />}
-      {isAdmin && <AdminLayout view={view} nav={nav} logout={logout} />}
-
-      <div className="animate-fade">
-        {/* PUBLIC VIEWS */}
-        {view === VIEWS.HOME && <HomePage nav={nav} />}
-        {view === VIEWS.EVENTS_LIST && <EventsListPage nav={nav} />}
-        {view === VIEWS.EVENT_DETAIL && <EventDetailPage nav={nav} params={params} />}
-        {view === VIEWS.REGISTER && <RegisterPage nav={nav} params={params} toast={toast} refresh={refresh} />}
-        {view === VIEWS.CONFIRMATION && <ConfirmationPage nav={nav} params={params} />}
-        {view === VIEWS.QR_PASS && <QRPassPage nav={nav} params={params} />}
-        {view === VIEWS.FEEDBACK && <FeedbackPage nav={nav} params={params} toast={toast} refresh={refresh} />}
-        {view === VIEWS.FEEDBACK_SUCCESS && <FeedbackSuccessPage nav={nav} params={params} />}
-        {view === VIEWS.LOGIN && <LoginPage nav={nav} login={login} />}
-
-        {/* ADMIN VIEWS */}
-        {isAdmin && view === VIEWS.ADMIN_DASHBOARD && <AdminDashboard nav={nav} />}
-        {isAdmin && view === VIEWS.ADMIN_EVENTS && <AdminEvents nav={nav} toast={toast} refresh={refresh} />}
-        {isAdmin && view === VIEWS.ADMIN_CREATE_EVENT && <AdminCreateEvent nav={nav} params={params} toast={toast} refresh={refresh} />}
-        {isAdmin && view === VIEWS.ADMIN_EVENT_VIEW && <AdminEventView nav={nav} params={params} toast={toast} refresh={refresh} />}
-        {isAdmin && view === VIEWS.ADMIN_SCANNER && <AdminScanner nav={nav} params={params} toast={toast} refresh={refresh} />}
-        {isAdmin && view === VIEWS.ADMIN_FEEDBACK && <AdminFeedback nav={nav} />}
-        {isAdmin && view === VIEWS.ADMIN_REPORTS && <AdminReports nav={nav} toast={toast} />}
-        {isAdmin && view === VIEWS.ADMIN_SETTINGS && <AdminSettings nav={nav} />}
-        {isAdmin && view === VIEWS.ADMIN_TASK_TEMPLATES && <AdminTaskTemplates nav={nav} toast={toast} refresh={refresh} />}
-      </div>
+      {isAdmin ? (
+        <AdminLayout view={view} nav={nav} logout={logout}>
+          <div className="animate-fade">
+            {view === VIEWS.ADMIN_DASHBOARD && <AdminDashboard nav={nav} />}
+            {view === VIEWS.ADMIN_EVENTS && <AdminEvents nav={nav} toast={toast} refresh={refresh} />}
+            {view === VIEWS.ADMIN_CREATE_EVENT && <AdminCreateEvent nav={nav} params={params} toast={toast} refresh={refresh} />}
+            {view === VIEWS.ADMIN_EVENT_VIEW && <AdminEventView nav={nav} params={params} toast={toast} refresh={refresh} />}
+            {view === VIEWS.ADMIN_SCANNER && <AdminScanner nav={nav} params={params} toast={toast} refresh={refresh} />}
+            {view === VIEWS.ADMIN_FEEDBACK && <AdminFeedback nav={nav} />}
+            {view === VIEWS.ADMIN_REPORTS && <AdminReports nav={nav} toast={toast} />}
+            {view === VIEWS.ADMIN_SETTINGS && <AdminSettings nav={nav} />}
+            {view === VIEWS.ADMIN_TASK_TEMPLATES && <AdminTaskTemplates nav={nav} toast={toast} refresh={refresh} />}
+          </div>
+        </AdminLayout>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+          <PublicLayout view={view} nav={nav} user={user} />
+          <div className="animate-fade" style={{ flex: 1 }}>
+            {view === VIEWS.HOME && <HomePage nav={nav} />}
+            {view === VIEWS.EVENTS_LIST && <EventsListPage nav={nav} />}
+            {view === VIEWS.EVENT_DETAIL && <EventDetailPage nav={nav} params={params} />}
+            {view === VIEWS.REGISTER && <RegisterPage nav={nav} params={params} toast={toast} refresh={refresh} />}
+            {view === VIEWS.CONFIRMATION && <ConfirmationPage nav={nav} params={params} />}
+            {view === VIEWS.QR_PASS && <QRPassPage nav={nav} params={params} />}
+            {view === VIEWS.FEEDBACK && <FeedbackPage nav={nav} params={params} toast={toast} refresh={refresh} />}
+            {view === VIEWS.FEEDBACK_SUCCESS && <FeedbackSuccessPage nav={nav} params={params} />}
+            {view === VIEWS.LOGIN && <LoginPage nav={nav} login={login} />}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -402,7 +406,7 @@ function PublicLayout({ view, nav }) {
 }
 
 // ─── ADMIN LAYOUT ─────────────────────────────────────────────────────────────
-function AdminLayout({ view, nav, logout }) {
+function AdminLayout({ view, nav, logout, children }) {
   const [collapsed, setCollapsed] = useState(false)
   const org = store.getOrganizer()
   const navItems = [
@@ -452,7 +456,9 @@ function AdminLayout({ view, nav, logout }) {
             <Btn variant="primary" size="sm" icon={Plus} onClick={() => nav(VIEWS.ADMIN_CREATE_EVENT)}>New Event</Btn>
           </div>
         </div>
-        <main style={{ flex: 1, padding: 24, maxWidth: 1300 }}>{/* children rendered by App */}</main>
+        <main style={{ flex: 1, padding: 24, maxWidth: 1300, margin: "0 auto", width: "100%" }}>
+          {children}
+        </main>
       </div>
     </div>
   )
@@ -638,7 +644,6 @@ function EventDetailPage({ nav, params }) {
         {/* Register CTA */}
         <div>
           <Card className="p-5" style={{ position: "sticky", top: 80 }}>
-            <div style={{ height: 6, borderRadius: "6px 6px 0 0", background: "linear-gradient(90deg,#1a44f5,#14b8a6)", margin: "-20px -20px 16px" }} />
             <p style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Register for this event</p>
             {event.requiresCertificate && <p style={{ fontSize: 11, color: "#8b5cf6", marginBottom: 12, display: "flex", alignItems: "center", gap: 5 }}><Award size={11} />Certificate of attendance available</p>}
             <div style={{ marginBottom: 16 }}>
@@ -709,7 +714,6 @@ function RegisterPage({ nav, params, toast, refresh }) {
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 24px" }}>
       <button onClick={() => nav(VIEWS.EVENT_DETAIL, { eventId: params.eventId })} style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748b", background: "none", border: "none", cursor: "pointer", fontSize: 13, marginBottom: 20 }}><ArrowLeft size={15} />Back</button>
       <Card className="p-6">
-        <div style={{ height: 4, borderRadius: 4, background: "linear-gradient(90deg,#1a44f5,#14b8a6)", marginBottom: 20 }} />
         <h2 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", marginBottom: 4 }}>Event Registration</h2>
         <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20 }}>For: <b>{event.title}</b></p>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -788,7 +792,6 @@ function QRPassPage({ nav, params }) {
   return (
     <div style={{ maxWidth: 400, margin: "0 auto", padding: "32px 24px", textAlign: "center" }}>
       <Card className="p-6">
-        <div style={{ height: 5, margin: "-24px -24px 20px", borderRadius: "16px 16px 0 0", background: "linear-gradient(90deg,#1a44f5,#14b8a6)" }} />
         <p style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 4 }}>QR Event Pass</p>
         <h3 style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", marginBottom: 4 }}>{reg.name}</h3>
         <p style={{ fontSize: 12, color: "#64748b", marginBottom: 20 }}>{event.title}</p>
@@ -911,9 +914,9 @@ function LoginPage({ nav, login }) {
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: "60px auto", padding: "0 24px" }}>
-      <Card className="p-8">
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
+    <div style={{ maxWidth: 420, margin: "100px auto", padding: "0 24px" }}>
+      <Card className="p-10 shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-slate-200 ring-1 ring-slate-100 bg-white">
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ width: 48, height: 48, borderRadius: 16, background: "linear-gradient(135deg,#1a44f5,#1436c4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}><QrCode size={22} color="white" /></div>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1e293b" }}>Organizer Login</h2>
           <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>QR-Attend Admin Panel</p>
@@ -938,7 +941,7 @@ function AdminDashboard({ nav }) {
   const feedback = store.getFeedback()
 
   const typeData = ["Student","Faculty","Researcher","Professional"].map(t => ({ name: t, value: regs.filter(r => r.type === t).length })).filter(d => d.value > 0)
-  const evChartData = events.map(ev => { const r = store.getRegistrations(ev.id); const a = r.filter(x => x.attended).length; return { name: ev.title.slice(0,18)+"…", registered: r.length, attended: a } })
+  const evChartData = events.map(ev => { const r = store.getRegistrations(ev.id); const a = r.filter(x => x.attended).length; return { name: ev.title.length > 18 ? ev.title.slice(0,18)+"…" : ev.title, registered: r.length, attended: a } })
   const recentRegs = [...regs].sort((a,b) => new Date(b.registeredAt)-new Date(a.registeredAt)).slice(0,5)
 
   return (

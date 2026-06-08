@@ -74,7 +74,7 @@ export default function AdminAttendancePage() {
             const evAtt = evRegs.filter(r => r.attended).length
             const evRate = evRegs.length > 0 ? Math.round((evAtt / evRegs.length) * 100) : 0
             return (
-              <Card key={ev.id} className="p-4 flex items-center gap-4 cursor-pointer hover:border-brand-200 transition-colors" onClick={() => setEventFilter(ev.id)}>
+              <Card key={ev.id} className="p-4 flex items-center gap-4 cursor-pointer hover:border-brand-200 hover:shadow-md transition-all active:scale-95" onClick={() => setEventFilter(ev.id)}>
                 <ProgressRing value={evRate} size={50} strokeWidth={5} color="#1a44f5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-700 truncate">{ev.title}</p>

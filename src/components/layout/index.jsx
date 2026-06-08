@@ -108,6 +108,14 @@ export function AdminSidebar({ collapsed, setCollapsed }) {
   const navigate = useNavigate()
   const { logout } = useApp()
 
+  // Keep sidebar height perfectly aligned with the main content area.
+  // Using min-h-screen instead of h-screen prevents layout jumps when
+  // content uses sticky headers/footers.
+  const sidebarClassName = cn(
+    'bg-navy-950 text-white flex-shrink-0 flex flex-col min-h-screen sticky top-0 transition-all duration-300 overflow-hidden',
+    collapsed ? 'w-[68px]' : 'w-[240px]'
+  )
+
   const sections = [
     { label: 'Main', items: [
       { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
@@ -131,10 +139,7 @@ export function AdminSidebar({ collapsed, setCollapsed }) {
   }
 
   return (
-    <aside className={cn(
-      'bg-navy-950 text-white flex-shrink-0 flex flex-col h-screen sticky top-0 transition-all duration-300 overflow-hidden',
-      collapsed ? 'w-[68px]' : 'w-[240px]'
-    )}>
+    <aside className={sidebarClassName}>
       {/* Logo */}
       <div className="flex items-center justify-between p-4 border-b border-white/5">
         {!collapsed && (
@@ -206,7 +211,7 @@ export function AdminHeader() {
           </div>
           <div className="flex items-center gap-2.5 pl-3 border-l border-surface-200">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-[10px] font-bold">
-              {user ? user.name.split(' ').map(n => n[0]).join('') : 'AD'}
+              {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'AD'}
             </div>
             <div className="hidden sm:block">
               <p className="text-xs font-semibold text-slate-700">{user?.name || 'Admin User'}</p>
