@@ -285,7 +285,7 @@ const PriceTag = ({ event }) => {
 // ─── VIEWS ──────────────────────────────────────────────────────────────────
 const V = {
   HOME: "home", EVENT: "event", REGISTER: "register", CONFIRM: "confirm", PASS: "pass", FEEDBACK: "feedback", FB_DONE: "fb_done",
-  FIND_PASS: "find_pass",
+  FIND_PASS: "find_pass", LOGIN: "login", ORG_REGISTER: "org_register",
   ORG_DASH: "org_dash", ORG_EVENT: "org_event", ORG_SCAN: "org_scan", ORG_FEEDBACK: "org_feedback", ORG_REPORTS: "org_reports",
   ORG_TEMPLATES: "org_templates", ORG_PROFILE: "org_profile", ORG_APPROVALS: "org_approvals", ORG_EDIT: "org_edit",
 }
@@ -304,8 +304,9 @@ export default function App() {
     setToasts(t => [...t, { id, msg, type }])
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500)
   }, [])
-  const enterOrganizer = () => { setMode("organizer"); nav(V.ORG_DASH) }
+  const enterOrganizer = () => nav(V.LOGIN)
   const exitOrganizer = () => { setMode("public"); nav(V.HOME) }
+  const onLogin = () => { setMode("organizer"); nav(V.ORG_DASH) }
 
   return (
     <div style={{ fontFamily: "'Inter',system-ui,sans-serif" }} className="min-h-screen bg-[#fafafa] text-slate-800">
@@ -340,6 +341,8 @@ export default function App() {
             {view === V.FEEDBACK && <FeedbackPage nav={nav} params={params} toast={toast} refresh={refresh} />}
             {view === V.FB_DONE && <FeedbackDone nav={nav} params={params} />}
             {view === V.FIND_PASS && <FindPassPage nav={nav} toast={toast} />}
+            {view === V.LOGIN && <LoginPage nav={nav} toast={toast} onLogin={onLogin} />}
+            {view === V.ORG_REGISTER && <RegisterOrganizerPage nav={nav} toast={toast} onRegister={onLogin} />}
           </PublicShell>
         : <OrgShell nav={nav} view={view} onExit={exitOrganizer} setCreateOpen={setCreateOpen} toast={toast}>
             {view === V.ORG_DASH && <OrgDashboard nav={nav} setCreateOpen={setCreateOpen} />}
@@ -466,10 +469,6 @@ function Home({ nav, setCreateOpen }) {
         </div>
       )}
 
-      {/* Sticky create button */}
-      <button onClick={() => setCreateOpen(true)} className="fixed bottom-6 right-6 z-30 flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-[#e94560] text-white font-bold text-sm shadow-xl shadow-rose-300/40 hover:bg-[#d63651] active:scale-95 transition-all">
-        <Plus size={18} />Create Event
-      </button>
     </div>
   )
 }
@@ -609,6 +608,22 @@ function EventPage({ nav, params, toast }) {
               </>
             )}
           </Card>
+
+          {/* Location Map */}
+          <div className="mt-4">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Location</p>
+            <div className="rounded-2xl overflow-hidden aspect-video bg-slate-100 border border-slate-200">
+              <iframe
+                className="w-full h-full"
+                frameBorder="0"
+                scrolling="no"
+                marginHeight="0"
+                marginWidth="0"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(event.venue + ", " + event.location)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+              ></iframe>
+            </div>
+            <p className="text-[12px] text-slate-500 mt-2">{event.venue}, {event.location}</p>
+          </div>
 
           {/* Add to calendar + share */}
           <div className="mt-3 space-y-2">
@@ -1150,6 +1165,70 @@ function FindPassPage({ nav, toast }) {
   )
 }
 
+// ─── LOGIN / REGISTER ORGANIZER ─────────────────────────────────────────────
+function LoginPage({ nav, toast, onLogin }) {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const login = () => {
+    if (!email.trim() || !password.trim()) { toast("Please enter email and password", "error"); return }
+    setLoading(true)
+    setTimeout(() => {
+      // Dummy auth
+      if (email === "demo@qr.ph" && password === "password") {
+        toast("Welcome back!", "success"); onLogin()
+      } else {
+        toast("Invalid credentials", "error"); setLoading(false)
+      }
+    }, 800)
+  }
+  return (
+    <div className="max-w-sm mx-auto px-5 py-16">
+      <Card className="p-8">
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-extrabold">Organizer Login</h2>
+          <p className="text-[13px] text-slate-500 mt-1">Access your event dashboard.</p>
+        </div>
+        <div className="space-y-4">
+          <Input label="Email" value={email} onChange={e => setEmail(e.target.value)} icon={Mail} type="email" placeholder="you@email.com" />
+          <Input label="Password" value={password} onChange={e => setPassword(e.target.value)} icon={Lock} type="password" placeholder="••••••••" />
+          <Btn variant="primary" size="lg" full loading={loading} onClick={login}>Log In</Btn>
+          <p className="text-[12px] text-slate-500 text-center">New here? <button onClick={() => nav(V.ORG_REGISTER)} className="font-semibold text-[#e94560] hover:underline">Create an account</button></p>
+        </div>
+        <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <p className="text-[11px] text-slate-400 text-center">
+            Demo: <span className="font-mono text-slate-500">demo@qr.ph</span> / <span className="font-mono text-slate-500">password</span>
+          </p>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+function RegisterOrganizerPage({ nav, toast, onRegister }) {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const signup = () => {
+    if (!email.trim() || !password.trim()) { toast("Please enter email and password", "error"); return }
+    setLoading(true)
+    setTimeout(() => { toast("Account created! Welcome.", "success"); onRegister() }, 800)
+  }
+  return (
+    <div className="max-w-sm mx-auto px-5 py-16">
+      <Card className="p-8">
+        <div className="text-center mb-6"><h2 className="text-xl font-extrabold">Create Organizer Account</h2><p className="text-[13px] text-slate-500 mt-1">Start creating and managing events.</p></div>
+        <div className="space-y-4">
+          <Input label="Email" value={email} onChange={e => setEmail(e.target.value)} icon={Mail} type="email" placeholder="you@email.com" />
+          <Input label="Password" value={password} onChange={e => setPassword(e.target.value)} icon={Lock} type="password" placeholder="••••••••" />
+          <Btn variant="accent" size="lg" full loading={loading} onClick={signup}>Create Account</Btn>
+          <p className="text-[12px] text-slate-500 text-center">Already have an account? <button onClick={() => nav(V.LOGIN)} className="font-semibold text-[#e94560] hover:underline">Log in</button></p>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 // ─── ORGANIZER SHELL ────────────────────────────────────────────────────────
 function OrgShell({ children, nav, view, onExit, setCreateOpen, toast }) {
   const org = store.getOrg()
@@ -1606,7 +1685,7 @@ function OrgEditEvent({ nav, params, toast, refresh }) {
 
 function OrgScanner({ nav, params, toast, refresh }) {
   const events = store.getEvents().filter(e => e.status !== "rejected")
-  const [eventId, setEventId] = useState(() => params.id || events.find(e => e.status !== 'completed')?.id || events[0]?.id || "")
+  const [eventId, setEventId] = useState(params.id || events[0]?.id || "")
   const [input, setInput] = useState("")
   const [result, setResult] = useState(null)
   const [history, setHistory] = useState([])
